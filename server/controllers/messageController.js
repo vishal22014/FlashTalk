@@ -186,4 +186,28 @@ export const editMessage = async (req, res) => {
     }
 }
 
+export const deleteConversation = async (req, res) => {
+    try {
+        const { id: otherUserId } = req.params;
+        const myId = req.user._id;
+
+        await Message.deleteMany({
+            $or: [
+                { senderId: myId, receiverId: otherUserId },
+                { senderId: otherUserId, receiverId: myId }
+            ]
+        });
+
+        const receiverSocketId = userSocketMap[otherUserId];
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit("conversationDeleted", myId);
+        }
+
+        res.json({ success: true, message: "Conversation deleted successfully" });
+    } catch (error) {
+        console.log("Error in deleteConversation controller: ", error.message);
+        res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+}
+
 

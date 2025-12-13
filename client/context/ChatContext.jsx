@@ -88,6 +88,20 @@ export const ChatProvider = ({ children }) => {
         }
     }
 
+    const deleteConversation = async (userId) => {
+        try {
+            const { data } = await axios.delete(`/api/messages/conversation/${userId}`);
+            if (data.success) {
+                setMessages([]);
+                toast.success("Conversation deleted");
+            } else {
+                toast.error(data.message)
+            }
+        } catch (error) {
+            toast.error(error.message)
+        }
+    }
+
 
 
     // function to subscribe to messages for selected user
@@ -147,6 +161,13 @@ export const ChatProvider = ({ children }) => {
             setMessages(prev => prev.map(msg => msg._id === updatedMessage._id ? updatedMessage : msg))
         })
 
+        socket.on("conversationDeleted", (userId) => {
+            if (selectedUser && userId === selectedUser._id) {
+                setMessages([]);
+                toast.success("Conversation deleted by other user");
+            }
+        })
+
 
     }
 
@@ -160,6 +181,7 @@ export const ChatProvider = ({ children }) => {
             socket.off("messageSeen");
             socket.off("messageDeleted");
             socket.off("messageUpdated");
+            socket.off("conversationDeleted");
 
         }
     }
@@ -170,7 +192,7 @@ export const ChatProvider = ({ children }) => {
     }, [socket, selectedUser])
 
     const value = {
-        messages, users, selectedUser, getUsers, getMessages, sendMessage, deleteMessage, editMessage, setSelectedUser, unseenMessages, setUnseenMessages, isTyping
+        messages, users, selectedUser, getUsers, getMessages, sendMessage, deleteMessage, editMessage, deleteConversation, setSelectedUser, unseenMessages, setUnseenMessages, isTyping
     }
 
     return (
